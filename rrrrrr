@@ -1,0 +1,107 @@
+import pygame
+
+FPS = 50  # количество кадров в секунду
+SIZE = WIDTH, HEIGHT = 800, 400
+
+
+class Board:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.board = [[0] * width for _ in range(height)]
+        self.left = 10
+        self.top = 10
+        self.cell_size = 30
+
+    def set_view(self, left, top, cell_size):
+        self.left = left
+        self.top = top
+        self.cell_size = cell_size
+
+    def end_pixels(self):
+        width_p = self.left + self.width * self.cell_size
+        height_p = self.top + self.height * self.cell_size
+        return width_p, height_p
+
+    def pixels_to_row_and_column(self, pixel_x, pixel_y):
+        row = (pixel_y - self.top) // self.cell_size
+        column = (pixel_x - self.left) // self.cell_size
+        return row, column
+
+    def render(self, screen):
+        width_p, height_p = self.end_pixels()
+        for x in range(self.left, width_p, self.cell_size):
+            for y in range(self.top, height_p, self.cell_size):
+                row, column = self.pixels_to_row_and_column(x, y)
+                if self.board[row][column] == 0:
+                    width = 1
+                else:
+                    width = 0
+
+                pygame.draw.rect(screen, 'white',
+                                 (x, y, self.cell_size, self.cell_size),
+                                 width=width)
+
+    def get_click(self, mouse_pos):
+        cell = self.get_cell(mouse_pos)
+        print(cell )
+        if cell is None:
+            return
+        row, col = cell
+        for r in range(row):
+            print(r, col)
+            cell = self.get_cell((r, col))
+            self.on_click(cell)
+        for c in range(col):
+            cell = self.get_cell((row, c))
+            self.on_click(cell)
+
+    def get_cell(self, mouse_pos):
+        mx, my = mouse_pos
+        width_p, height_p = self.end_pixels()
+        if mx <= self.left or mx >= width_p:
+            return
+        if my <= self.top or my >= height_p:
+            return
+        return self.pixels_to_row_and_column(mx, my)
+
+    def on_click(self, cell):
+        row, column = cell
+        value = self.board[row][column]
+        if value == 0:
+            self.board[row][column] = 1
+        elif value == 1:
+            self.board[row][column] = 0
+        else:
+            raise Exception("В поле хранится не 0 или 1")
+
+
+def main():
+    pygame.display.set_caption('Клетчатое поле')
+
+    screen = pygame.display.set_mode(SIZE)
+
+    clock = pygame.time.Clock()
+    running = True
+
+    board = Board(4, 3)
+    board.set_view(300, 100, 50)
+    while running:
+        screen.fill('black')
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                break
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    board.get_click(event.pos)
+
+        board.render(screen)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+if __name__ == '__main__':
+    pygame.init()
+    main()
+    pygame.quit()
